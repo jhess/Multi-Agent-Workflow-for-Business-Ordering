@@ -1,3 +1,4 @@
+import re
 import pandas as pd
 import numpy as np
 import ast
@@ -616,3 +617,23 @@ def search_quote_history(search_terms: List[str], limit: int = 5) -> List[Dict]:
     with db_engine.connect() as conn:
         result = conn.execute(text(query), params)
         return [dict(row._mapping) for row in result]
+    
+def build_search_terms(raw: str):
+    """
+    Tokenize into clean terms:
+    - Keep words, numbers, simple hyphenated tokens, and units like A4
+    - Strip trailing punctuation
+    - Remove empties
+    """
+    # Split on any whitespace
+    rough = re.split(r"\s+", raw.strip())
+    cleaned = []
+    for tok in rough:
+        tok = tok.strip()
+        if not tok:
+            continue
+        # Remove surrounding punctuation while keeping inner hyphens/numbers
+        tok = re.sub(r"^[^\w$%#@]+|[^\w%$#@]+$", "", tok)  # allow $, %, #, @ in case
+        if tok:
+            cleaned.append(tok)
+    return cleaned

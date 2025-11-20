@@ -1,11 +1,6 @@
 import pandas as pd
-import re
 from datetime import datetime
-from smolagents import (
-    ToolCallingAgent,
-    OpenAIServerModel,
-    tool,
-)
+from smolagents import tool
 from lib.dbhelpers import check_item, create_transaction, get_stock_level, get_unit_price, search_quote_history, get_supplier_delivery_date
 
 # Tools for inventory agent
@@ -163,36 +158,3 @@ def check_delivery_timeline(start_date: str, quantity: int) -> str:
         str: An estimated delivery date in a string in ISO format (YYYY-MM-DD).
     """
     return get_supplier_delivery_date(start_date, quantity)
-
-# Sales finalization Agent (e.g., processing orders, updating database)
-# Finalize sales transactions, considering inventory levels and delivery timelines
-class SalesFinalizationAgent(ToolCallingAgent):
-    """Agent for finalizing sales."""
-
-    def __init__(self, model: OpenAIServerModel):
-        super().__init__(
-            tools=[sell_inventory_item, check_delivery_timeline],
-            model=model,
-            name="sales_agent",
-            description="Agent for finalizing sales. Process orders, update database.",
-        )
-
-def build_search_terms(raw: str):
-    """
-    Tokenize into clean terms:
-    - Keep words, numbers, simple hyphenated tokens, and units like A4
-    - Strip trailing punctuation
-    - Remove empties
-    """
-    # Split on any whitespace
-    rough = re.split(r"\s+", raw.strip())
-    cleaned = []
-    for tok in rough:
-        tok = tok.strip()
-        if not tok:
-            continue
-        # Remove surrounding punctuation while keeping inner hyphens/numbers
-        tok = re.sub(r"^[^\w$%#@]+|[^\w%$#@]+$", "", tok)  # allow $, %, #, @ in case
-        if tok:
-            cleaned.append(tok)
-    return cleaned
